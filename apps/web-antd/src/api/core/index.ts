@@ -1,4 +1,5 @@
 export * from './auth';
+export * from './cashier';
 export * from './menu';
 export * from './merchant';
 export * from './staff';
