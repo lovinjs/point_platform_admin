@@ -42,12 +42,12 @@
 #       runner: go run
 
 pre-commit:
-  parallel: true
+  parallel: false
   commands:
     lint:
       run: pnpm lint
     checkType:
-      run: pnpm check:type
+      run: pnpm -F @vben/web-antd run typecheck
 
 post-merge:
   commands:

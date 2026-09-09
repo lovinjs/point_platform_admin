@@ -18,7 +18,26 @@ interface WebAntdPreferencesExtension {
 export const overridesPreferences = defineOverridesPreferences({
   // overrides
   app: {
+    accessMode: 'frontend',
+    defaultHomePath: '/dashboard/overview',
+    enableCheckUpdates: false,
+    enableRefreshToken: false,
+    loginExpiredMode: 'page',
     name: import.meta.env.VITE_APP_TITLE,
+  },
+  copyright: {
+    companyName: '积分平台',
+    companySiteLink: '',
+    date: '2026',
+    enable: true,
+  },
+  theme: {
+    mode: 'light',
+  },
+  widget: {
+    languageToggle: false,
+    notification: false,
+    timezone: false,
   },
 });
 
