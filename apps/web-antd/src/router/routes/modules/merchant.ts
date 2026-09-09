@@ -12,6 +12,16 @@ const routes: RouteRecordRaw[] = [
     path: '/merchant',
     children: [
       {
+        name: 'MerchantList',
+        path: '/merchant/list',
+        component: () => import('#/views/merchant/merchant/index.vue'),
+        meta: {
+          authority: ['SUPER_ADMIN'],
+          icon: 'lucide:handshake',
+          title: '合作商户',
+        },
+      },
+      {
         name: 'StoreManagement',
         path: '/merchant/stores',
         component: () => import('#/views/merchant/store/index.vue'),
