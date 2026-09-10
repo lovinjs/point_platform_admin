@@ -1,14 +1,17 @@
 <script lang="ts" setup>
 import type { TableProps } from 'ant-design-vue';
+import type { Dayjs } from 'dayjs';
 
 import type {
   AdminConsumptionOrder,
   AdminRechargeOrder,
+  ConsumptionOrderExportParams,
   ConsumptionOrderPageParams,
   ConsumptionOrderStatus,
   OrderStoreOption,
   OrderStoreStatus,
   PaymentMethod,
+  RechargeOrderExportParams,
   RechargeOrderPageParams,
   RechargeOrderStatus,
   RechargeRefundParams,
@@ -21,6 +24,7 @@ import { computed, onMounted, reactive, ref } from 'vue';
 
 import { Page } from '@vben/common-ui';
 import { useUserStore } from '@vben/stores';
+import { downloadFileFromBlob } from '@vben/utils';
 
 import {
   Alert,
@@ -28,6 +32,7 @@ import {
   Card,
   Checkbox,
   Col,
+  DatePicker,
   Form,
   FormItem,
   Input,
@@ -44,6 +49,8 @@ import {
 import dayjs from 'dayjs';
 
 import {
+  exportConsumptionOrdersApi,
+  exportRechargeOrdersApi,
   getConsumptionOrderPageApi,
   getOrderStoreOptionsApi,
   getRechargeOrderPageApi,
@@ -151,6 +158,13 @@ const currentUser = computed(
 const isSuperAdmin = computed(() =>
   Boolean(currentUser.value?.roles.includes('SUPER_ADMIN')),
 );
+const canExportOrders = computed(() =>
+  Boolean(
+    currentUser.value?.roles.some((role) =>
+      ['STORE_MANAGER', 'SUPER_ADMIN'].includes(role),
+    ),
+  ),
+);
 
 const activeTab = ref<OrderTab>('recharge');
 const storeOptions = ref<OrderStoreOption[]>([]);
@@ -163,6 +177,9 @@ const consumptionLoading = ref(false);
 const refundSaving = ref(false);
 const refundModalOpen = ref(false);
 const refundOrder = ref<AdminRechargeOrder>();
+const exportModalOpen = ref(false);
+const exportLoading = ref(false);
+const exportRange = ref<[string, string]>(currentMonthRange());
 
 const rechargeQuery = reactive<RechargeOrderPageParams>({
   pageNum: 1,
@@ -231,6 +248,76 @@ async function loadConsumptionOrders() {
     consumptionQuery.pageSize = result.pageSize;
   } finally {
     consumptionLoading.value = false;
+  }
+}
+
+function currentMonthRange(): [string, string] {
+  return [
+    dayjs().startOf('month').format('YYYY-MM-DD'),
+    dayjs().format('YYYY-MM-DD'),
+  ];
+}
+
+function openOrderExport() {
+  exportRange.value = currentMonthRange();
+  exportModalOpen.value = true;
+}
+
+function validExportRange(value?: [string, string]) {
+  if (!value?.[0] || !value[1]) return false;
+  const start = dayjs(value[0]);
+  const end = dayjs(value[1]);
+  return !end.isBefore(start, 'day') && end.diff(start, 'day') < 93;
+}
+
+function disabledFutureDate(current: Dayjs) {
+  return current.isAfter(dayjs().endOf('day'));
+}
+
+async function submitOrderExport() {
+  if (!validExportRange(exportRange.value)) {
+    message.warning('请选择不超过93天的有效订单创建日期范围');
+    return;
+  }
+  const startDate = exportRange.value[0];
+  const endDate = exportRange.value[1];
+  exportLoading.value = true;
+  try {
+    let file: Blob;
+    let filePrefix: string;
+    if (activeTab.value === 'recharge') {
+      const query = cleanQuery(rechargeQuery);
+      const params: RechargeOrderExportParams = {
+        customerPhone: query.customerPhone,
+        endDate,
+        orderNo: query.orderNo,
+        startDate,
+        status: query.status,
+        storeId: query.storeId,
+      };
+      file = await exportRechargeOrdersApi(params);
+      filePrefix = '充值订单';
+    } else {
+      const query = cleanQuery(consumptionQuery);
+      const params: ConsumptionOrderExportParams = {
+        customerPhone: query.customerPhone,
+        endDate,
+        orderNo: query.orderNo,
+        startDate,
+        status: query.status,
+        storeId: query.storeId,
+      };
+      file = await exportConsumptionOrdersApi(params);
+      filePrefix = '消费订单';
+    }
+    downloadFileFromBlob({
+      fileName: `${filePrefix}_${startDate.replaceAll('-', '')}_${endDate.replaceAll('-', '')}.xlsx`,
+      source: file,
+    });
+    exportModalOpen.value = false;
+    message.success(`${filePrefix}报表已生成`);
+  } finally {
+    exportLoading.value = false;
   }
 }
 
@@ -540,6 +627,9 @@ onMounted(async () => {
           <Space wrap>
             <Button type="primary" @click="search">查询</Button>
             <Button @click="resetSearch">重置</Button>
+            <Button v-if="canExportOrders" @click="openOrderExport">
+              导出 Excel
+            </Button>
           </Space>
         </Col>
       </Row>
@@ -722,6 +812,30 @@ onMounted(async () => {
         </template>
       </Table>
     </Card>
+
+    <Modal
+      v-model:open="exportModalOpen"
+      :confirm-loading="exportLoading"
+      cancel-text="取消"
+      ok-text="生成并下载"
+      :title="activeTab === 'recharge' ? '导出充值订单' : '导出消费订单'"
+      width="560px"
+      @ok="submitOrderExport"
+    >
+      <Alert
+        class="mb-4"
+        description="文件会沿用订单中心当前选择的门店、状态、订单号和手机号筛选条件，单次最多导出93天、10000条记录。"
+        message="请选择订单创建日期范围"
+        show-icon
+        type="info"
+      />
+      <DatePicker.RangePicker
+        v-model:value="exportRange"
+        :disabled-date="disabledFutureDate"
+        class="w-full"
+        value-format="YYYY-MM-DD"
+      />
+    </Modal>
 
     <Modal
       v-model:open="refundModalOpen"

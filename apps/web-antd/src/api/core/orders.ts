@@ -24,6 +24,15 @@ interface OrderPageParams<TStatus> {
   storeId?: number;
 }
 
+interface OrderExportParams<TStatus> {
+  customerPhone?: string;
+  endDate: string;
+  orderNo?: string;
+  startDate: string;
+  status?: TStatus;
+  storeId?: number;
+}
+
 interface OrderPageResult<T> {
   hasNext: boolean;
   items: T[];
@@ -107,6 +116,8 @@ interface RechargeRefundResult {
 
 type RechargeOrderPageParams = OrderPageParams<RechargeOrderStatus>;
 type ConsumptionOrderPageParams = OrderPageParams<ConsumptionOrderStatus>;
+type RechargeOrderExportParams = OrderExportParams<RechargeOrderStatus>;
+type ConsumptionOrderExportParams = OrderExportParams<ConsumptionOrderStatus>;
 
 function getOrderStoreOptionsApi() {
   return requestClient.get<OrderStoreOption[]>('/order-center/store-options');
@@ -126,6 +137,16 @@ function getConsumptionOrderPageApi(params: ConsumptionOrderPageParams) {
   );
 }
 
+function exportRechargeOrdersApi(params: RechargeOrderExportParams) {
+  return requestClient.download<Blob>('/reports/recharge-orders', { params });
+}
+
+function exportConsumptionOrdersApi(params: ConsumptionOrderExportParams) {
+  return requestClient.download<Blob>('/reports/consumption-orders', {
+    params,
+  });
+}
+
 function refundRechargeOrderApi(
   orderNo: string,
   data: RechargeRefundParams,
@@ -139,6 +160,8 @@ function refundRechargeOrderApi(
 }
 
 export {
+  exportConsumptionOrdersApi,
+  exportRechargeOrdersApi,
   getConsumptionOrderPageApi,
   getOrderStoreOptionsApi,
   getRechargeOrderPageApi,
@@ -147,10 +170,12 @@ export {
 export type {
   AdminConsumptionOrder,
   AdminRechargeOrder,
+  ConsumptionOrderExportParams,
   ConsumptionOrderPageParams,
   OrderPageResult,
   OrderStoreOption,
   OrderStoreStatus,
+  RechargeOrderExportParams,
   RechargeOrderPageParams,
   RechargeOrderStatus,
   RechargeRefundParams,

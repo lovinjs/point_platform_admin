@@ -89,6 +89,14 @@ function getFinancialReconciliationApi(params: FinancialReconciliationParams) {
   );
 }
 
+function exportFinancialReconciliationApi(
+  params: FinancialReconciliationParams,
+) {
+  return requestClient.download<Blob>('/reports/financial-reconciliation', {
+    params,
+  });
+}
+
 function getAuditLogPageApi(params: AuditLogPageParams) {
   return requestClient.get<AuditLogPageResult>('/finance/audit-logs', {
     params,
@@ -100,6 +108,7 @@ function getAuditActionsApi() {
 }
 
 export {
+  exportFinancialReconciliationApi,
   getAuditActionsApi,
   getAuditLogPageApi,
   getFinancialReconciliationApi,

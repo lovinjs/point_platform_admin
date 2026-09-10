@@ -90,6 +90,20 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
     errorMessageResponseInterceptor((msg: string, error) => {
       // 这里可以根据业务进行定制,你可以拿到 error 内的信息进行定制化处理，根据不同的 code 做不同的提示，而不是直接使用 message.error 提示 msg
       const responseData = error?.response?.data ?? {};
+      if (responseData instanceof Blob) {
+        void responseData
+          .text()
+          .then((text) => {
+            try {
+              const data = JSON.parse(text);
+              message.error(data?.msg || data?.error || data?.message || msg);
+            } catch {
+              message.error(msg);
+            }
+          })
+          .catch(() => message.error(msg));
+        return;
+      }
       const errorMessage =
         responseData?.msg ?? responseData?.error ?? responseData?.message ?? '';
       // 如果没有错误信息，则会根据状态码进行提示

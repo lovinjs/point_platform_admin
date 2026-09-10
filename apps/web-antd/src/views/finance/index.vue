@@ -14,6 +14,7 @@ import type {
 import { computed, onMounted, reactive, ref } from 'vue';
 
 import { Page } from '@vben/common-ui';
+import { downloadFileFromBlob } from '@vben/utils';
 
 import {
   Alert,
@@ -37,6 +38,7 @@ import {
 import dayjs from 'dayjs';
 
 import {
+  exportFinancialReconciliationApi,
   getAuditActionsApi,
   getAuditLogPageApi,
   getFinancialReconciliationApi,
@@ -220,6 +222,7 @@ const auditActions = ref<string[]>([]);
 const reconciliationRange = ref<[string, string]>(currentMonthRange());
 const reconciliationStoreId = ref<number>();
 const reconciliationLoading = ref(false);
+const reconciliationExporting = ref(false);
 const reconciliation =
   ref<Awaited<ReturnType<typeof getFinancialReconciliationApi>>>();
 const summary = computed(() => reconciliation.value?.summary ?? emptyMetrics);
@@ -284,6 +287,30 @@ async function loadReconciliation() {
     });
   } finally {
     reconciliationLoading.value = false;
+  }
+}
+
+async function exportReconciliation() {
+  if (!validRange(reconciliationRange.value)) {
+    message.warning('请选择不超过366天的有效对账日期范围');
+    return;
+  }
+  reconciliationExporting.value = true;
+  try {
+    const startDate = reconciliationRange.value[0];
+    const endDate = reconciliationRange.value[1];
+    const file = await exportFinancialReconciliationApi({
+      endDate,
+      startDate,
+      storeId: reconciliationStoreId.value,
+    });
+    downloadFileFromBlob({
+      fileName: `财务对账_${startDate.replaceAll('-', '')}_${endDate.replaceAll('-', '')}.xlsx`,
+      source: file,
+    });
+    message.success('财务对账报表已生成');
+  } finally {
+    reconciliationExporting.value = false;
   }
 }
 
@@ -460,6 +487,12 @@ onMounted(async () => {
                 查询对账
               </Button>
               <Button @click="resetReconciliation">重置</Button>
+              <Button
+                :loading="reconciliationExporting"
+                @click="exportReconciliation"
+              >
+                导出 Excel
+              </Button>
             </Space>
           </Col>
         </Row>
