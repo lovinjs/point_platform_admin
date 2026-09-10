@@ -21,6 +21,16 @@ const routes: RouteRecordRaw[] = [
           title: '月度结算',
         },
       },
+      {
+        name: 'FinancialReconciliation',
+        path: '/settlement/reconciliation',
+        component: () => import('#/views/finance/index.vue'),
+        meta: {
+          authority: ['SUPER_ADMIN'],
+          icon: 'lucide:scan-search',
+          title: '财务对账与审计',
+        },
+      },
     ],
   },
 ];
