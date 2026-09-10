@@ -21,6 +21,16 @@ const routes: RouteRecordRaw[] = [
           title: '门店收银台',
         },
       },
+      {
+        name: 'OrderCenter',
+        path: '/operation/orders',
+        component: () => import('#/views/operation/orders/index.vue'),
+        meta: {
+          authority: ['SUPER_ADMIN', 'STORE_MANAGER', 'CLERK'],
+          icon: 'lucide:receipt-text',
+          title: '订单中心',
+        },
+      },
     ],
   },
 ];
