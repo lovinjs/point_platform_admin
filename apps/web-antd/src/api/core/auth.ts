@@ -17,6 +17,11 @@ export namespace AuthApi {
     tokenType: 'Bearer';
     user: PlatformAdminAccount;
   }
+
+  export interface ChangePasswordParams {
+    currentPassword: string;
+    newPassword: string;
+  }
 }
 
 /**
@@ -24,6 +29,11 @@ export namespace AuthApi {
  */
 export async function loginApi(data: AuthApi.LoginParams) {
   return requestClient.post<AuthApi.LoginResult>('/auth/login', data);
+}
+
+/** 修改当前后台账号的登录密码 */
+export async function changePasswordApi(data: AuthApi.ChangePasswordParams) {
+  return requestClient.put<unknown>('/auth/password', data);
 }
 
 /**
