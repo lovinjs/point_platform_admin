@@ -1,5 +1,6 @@
 export * from './auth';
 export * from './cashier';
+export * from './customer';
 export * from './dashboard';
 export * from './finance';
 export * from './menu';

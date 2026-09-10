@@ -61,6 +61,8 @@ const actionLabel: Record<string, string> = {
   CUSTOMER_CONSUME_PIN_LOCKED: '消费密码被锁定',
   CUSTOMER_CONSUME_PIN_RESET: '重置消费密码',
   CUSTOMER_CONSUME_PIN_SET: '设置消费密码',
+  CUSTOMER_DISABLED: '冻结客户账户',
+  CUSTOMER_ENABLED: '恢复客户账户',
   CUSTOMER_PHONE_BOUND: '绑定手机号',
   CUSTOMER_WECHAT_H5_REGISTERED: '微信用户注册',
   INITIAL_SUPER_ADMIN_CREATED: '创建初始超级管理员',
