@@ -72,6 +72,7 @@ const actionLabel: Record<string, string> = {
   MERCHANT_SUSPENDED: '停用商户',
   MERCHANT_UPDATED: '修改商户',
   OFFLINE_RECHARGE_COMPLETED: '线下充值完成',
+  PLATFORM_BUSINESS_SETTING_UPDATED: '修改平台业务参数',
   RECHARGE_REFUND_COMPLETED: '充值全额退款',
   SETTLEMENT_PERIOD_GENERATED: '生成月度结算',
   STAFF_CREATED: '创建员工',

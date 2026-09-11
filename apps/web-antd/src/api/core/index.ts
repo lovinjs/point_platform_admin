@@ -6,6 +6,7 @@ export * from './finance';
 export * from './menu';
 export * from './merchant';
 export * from './orders';
+export * from './settings';
 export * from './settlement';
 export * from './staff';
 export * from './store';
