@@ -8,6 +8,7 @@ import type {
   ConsumptionOrderExportParams,
   ConsumptionOrderPageParams,
   ConsumptionOrderStatus,
+  ConsumptionReversalParams,
   OrderStoreOption,
   OrderStoreStatus,
   PaymentMethod,
@@ -55,6 +56,7 @@ import {
   getOrderStoreOptionsApi,
   getRechargeOrderPageApi,
   refundRechargeOrderApi,
+  reverseConsumptionOrderApi,
 } from '#/api';
 
 type OrderTab = 'consumption' | 'recharge';
@@ -67,6 +69,8 @@ interface TablePagination {
 interface RefundFormModel extends RechargeRefundParams {
   actualRefundConfirmed: boolean;
 }
+
+interface ReversalFormModel extends ConsumptionReversalParams {}
 
 interface IdempotencyAttempt {
   fingerprint: string;
@@ -149,6 +153,7 @@ const consumptionColumns: TableProps<AdminConsumptionOrder>['columns'] = [
   },
   { dataIndex: 'operatorId', key: 'operator', title: '操作员', width: 130 },
   { dataIndex: 'remark', key: 'remark', title: '备注', width: 200 },
+  { fixed: 'right', key: 'action', title: '操作', width: 90 },
 ];
 
 const userStore = useUserStore();
@@ -177,6 +182,9 @@ const consumptionLoading = ref(false);
 const refundSaving = ref(false);
 const refundModalOpen = ref(false);
 const refundOrder = ref<AdminRechargeOrder>();
+const reversalSaving = ref(false);
+const reversalModalOpen = ref(false);
+const reversalOrder = ref<AdminConsumptionOrder>();
 const exportModalOpen = ref(false);
 const exportLoading = ref(false);
 const exportRange = ref<[string, string]>(currentMonthRange());
@@ -195,8 +203,10 @@ const refundModel = reactive<RefundFormModel>({
   refundMethod: 'ORIGINAL_CHANNEL',
   refundReference: '',
 });
+const reversalModel = reactive<ReversalFormModel>({ reason: '' });
 
 let refundAttempt: IdempotencyAttempt | undefined;
+let reversalAttempt: IdempotencyAttempt | undefined;
 
 const rechargePagination = computed(() => ({
   current: rechargeQuery.pageNum,
@@ -439,6 +449,59 @@ async function submitRefund() {
     await loadRechargeOrders();
   } finally {
     refundSaving.value = false;
+  }
+}
+
+function openReversal(order: AdminConsumptionOrder) {
+  if (!isSuperAdmin.value || order.orderStatus !== 'COMPLETED') return;
+  reversalOrder.value = order;
+  reversalModel.reason = '';
+  reversalAttempt = undefined;
+  reversalModalOpen.value = true;
+}
+
+function reversalSettlementHint(order?: AdminConsumptionOrder) {
+  if (!order || order.settlementStatus === 'NOT_INCLUDED') {
+    return '该消费尚未计入门店结算，冲正后不会产生门店应付款。';
+  }
+  if (order.settlementStatus === 'INCLUDED') {
+    return '该消费已进入一张待处理结算单。历史结算单保持不变，结清后系统会在后续月结生成负数冲正调整。';
+  }
+  if (order.settlementStatus === 'SETTLED') {
+    return '该消费已经与门店结算，系统会在后续月结中生成负数冲正调整，从门店应结金额中扣回。';
+  }
+  return '该消费的结算影响已经处理。';
+}
+
+async function submitReversal() {
+  const order = reversalOrder.value;
+  const reason = reversalModel.reason.trim();
+  if (!order) return;
+  if (!reason || reason.length > 500) {
+    message.warning('请填写不超过500个字符的冲正原因');
+    return;
+  }
+  const payload: ConsumptionReversalParams = { reason };
+  const fingerprint = JSON.stringify({ orderNo: order.orderNo, ...payload });
+  reversalAttempt =
+    reversalAttempt?.fingerprint === fingerprint
+      ? reversalAttempt
+      : { fingerprint, key: createIdempotencyKey('reversal') };
+  reversalSaving.value = true;
+  try {
+    const result = await reverseConsumptionOrderApi(
+      order.orderNo,
+      payload,
+      reversalAttempt.key,
+    );
+    reversalAttempt = undefined;
+    reversalModalOpen.value = false;
+    message.success(
+      `消费冲正完成，已退回 ${result.reversedPoints} 积分，当前余额 ${result.availablePoints} 积分`,
+    );
+    await loadConsumptionOrders();
+  } finally {
+    reversalSaving.value = false;
   }
 }
 
@@ -780,6 +843,9 @@ onMounted(async () => {
             <div v-if="record.completedTime" class="mt-1 text-xs text-gray-400">
               完成 {{ formatTime(record.completedTime) }}
             </div>
+            <div v-if="record.reversedTime" class="mt-1 text-xs text-red-400">
+              冲正 {{ formatTime(record.reversedTime) }}
+            </div>
           </template>
           <template v-else-if="column.key === 'settlement'">
             <template v-if="record.settlementStatus">
@@ -807,7 +873,26 @@ onMounted(async () => {
             {{ operatorName(record as AdminConsumptionOrder) }}
           </template>
           <template v-else-if="column.key === 'remark'">
-            <span :title="record.remark || ''">{{ record.remark || '-' }}</span>
+            <div :title="record.remark || ''">{{ record.remark || '-' }}</div>
+            <div
+              v-if="record.reversalReason"
+              class="mt-1 text-xs text-red-400"
+              :title="record.reversalReason"
+            >
+              冲正：{{ record.reversalReason }}
+            </div>
+          </template>
+          <template v-else-if="column.key === 'action'">
+            <Button
+              v-if="isSuperAdmin && record.orderStatus === 'COMPLETED'"
+              danger
+              size="small"
+              type="link"
+              @click="openReversal(record as AdminConsumptionOrder)"
+            >
+              异常冲正
+            </Button>
+            <span v-else class="text-gray-400">-</span>
           </template>
         </template>
       </Table>
@@ -835,6 +920,46 @@ onMounted(async () => {
         class="w-full"
         value-format="YYYY-MM-DD"
       />
+    </Modal>
+
+    <Modal
+      v-model:open="reversalModalOpen"
+      :confirm-loading="reversalSaving"
+      cancel-text="取消"
+      ok-text="确认冲正"
+      title="消费订单异常冲正"
+      width="620px"
+      @ok="submitReversal"
+    >
+      <Alert
+        class="mb-4"
+        description="冲正会把本次消费实际扣除的积分按原充值批次全部退回客户，但不会自动向客户退还现金。该操作不可撤销，只应用于重复扣减、金额录入错误等异常处理。"
+        message="这不是普通消费退款"
+        show-icon
+        type="error"
+      />
+      <div v-if="reversalOrder" class="mb-4 rounded bg-gray-50 p-3">
+        <div>订单：{{ reversalOrder.orderNo }}</div>
+        <div>
+          用户：{{ customerName(reversalOrder) }} ·
+          {{ reversalOrder.consumePoints }} 积分 /
+          {{ formatYuan(reversalOrder.amountCent) }}
+        </div>
+        <div class="mt-2 text-xs text-orange-600">
+          {{ reversalSettlementHint(reversalOrder) }}
+        </div>
+      </div>
+      <Form layout="vertical" :model="reversalModel">
+        <FormItem label="冲正原因" required>
+          <Input.TextArea
+            v-model:value="reversalModel.reason"
+            :maxlength="500"
+            :rows="4"
+            placeholder="请填写可核查的异常原因或关联工单号"
+            show-count
+          />
+        </FormItem>
+      </Form>
     </Modal>
 
     <Modal

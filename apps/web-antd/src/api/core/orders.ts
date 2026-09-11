@@ -88,6 +88,9 @@ interface AdminConsumptionOrder {
   platformFeeCent: number;
   platformFeeRateBps: number;
   remark: null | string;
+  reversalReason: null | string;
+  reversedBy: null | number;
+  reversedTime: null | string;
   settlementStatus: null | SettlementStatus;
   storeCode: null | string;
   storeId: number;
@@ -112,6 +115,21 @@ interface RechargeRefundResult {
   refundNo: string;
   refundPoints: number;
   refundStatus: RechargeRefundStatus;
+}
+
+interface ConsumptionReversalParams {
+  reason: string;
+}
+
+interface ConsumptionReversalResult {
+  availablePoints: number;
+  consumptionOrderNo: string;
+  customerId: number;
+  ledgerNo: string;
+  reversedPoints: number;
+  reversedTime: string;
+  settlementStatus: SettlementStatus;
+  storeId: number;
 }
 
 type RechargeOrderPageParams = OrderPageParams<RechargeOrderStatus>;
@@ -159,6 +177,18 @@ function refundRechargeOrderApi(
   );
 }
 
+function reverseConsumptionOrderApi(
+  orderNo: string,
+  data: ConsumptionReversalParams,
+  idempotencyKey: string,
+) {
+  return requestClient.post<ConsumptionReversalResult>(
+    `/consumption-orders/${encodeURIComponent(orderNo)}/reversal`,
+    data,
+    { headers: { 'Idempotency-Key': idempotencyKey } },
+  );
+}
+
 export {
   exportConsumptionOrdersApi,
   exportRechargeOrdersApi,
@@ -166,12 +196,15 @@ export {
   getOrderStoreOptionsApi,
   getRechargeOrderPageApi,
   refundRechargeOrderApi,
+  reverseConsumptionOrderApi,
 };
 export type {
   AdminConsumptionOrder,
   AdminRechargeOrder,
   ConsumptionOrderExportParams,
   ConsumptionOrderPageParams,
+  ConsumptionReversalParams,
+  ConsumptionReversalResult,
   OrderPageResult,
   OrderStoreOption,
   OrderStoreStatus,

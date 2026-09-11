@@ -57,6 +57,7 @@ const actionLabel: Record<string, string> = {
   ADMIN_PASSWORD_CHANGED: '后台账号修改密码',
   CONSUMPTION_ORDER_CONFIRMED: '用户确认消费',
   CONSUMPTION_ORDER_PREPARED: '创建待消费订单',
+  CONSUMPTION_ORDER_REVERSED: '消费异常冲正',
   CUSTOMER_CONSUME_PIN_CHANGED: '修改消费密码',
   CUSTOMER_CONSUME_PIN_LOCKED: '消费密码被锁定',
   CUSTOMER_CONSUME_PIN_RESET: '重置消费密码',

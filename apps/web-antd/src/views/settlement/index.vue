@@ -73,7 +73,7 @@ const settlementStatusMeta: Record<
   CLOSED: { color: 'default', label: '已关闭' },
   CONFIRMED: { color: 'blue', label: '门店已确认' },
   GENERATED: { color: 'orange', label: '待门店确认' },
-  PAID: { color: 'green', label: '平台已付款' },
+  PAID: { color: 'green', label: '已结清' },
 };
 
 const itemTypeLabel: Record<SettlementItemType, string> = {
@@ -92,7 +92,12 @@ const storeStatusLabel = {
 const columns: TableProps<StoreSettlementSummary>['columns'] = [
   { dataIndex: 'settlementNo', key: 'settlement', title: '结算单', width: 220 },
   { dataIndex: 'storeName', key: 'store', title: '结算门店', width: 190 },
-  { dataIndex: 'grossAmountCent', key: 'gross', title: '消费总额', width: 140 },
+  {
+    dataIndex: 'grossAmountCent',
+    key: 'gross',
+    title: '净消费金额',
+    width: 140,
+  },
   {
     dataIndex: 'platformFeeCent',
     key: 'platformFee',
@@ -108,7 +113,7 @@ const columns: TableProps<StoreSettlementSummary>['columns'] = [
   {
     dataIndex: 'payableAmountCent',
     key: 'payable',
-    title: '门店应结',
+    title: '结算净额',
     width: 140,
   },
   { dataIndex: 'settlementStatus', key: 'status', title: '状态', width: 180 },
@@ -193,6 +198,16 @@ const pagination = computed(() => ({
   showTotal: (value: number) => `共 ${value} 张门店结算单`,
   total: total.value,
 }));
+const isMerchantRepayment = computed(
+  () => (operationTarget.value?.payableAmountCent ?? 0) < 0,
+);
+const isZeroSettlement = computed(
+  () => operationTarget.value?.payableAmountCent === 0,
+);
+const settlementFlowLabel = computed(() => {
+  if (isZeroSettlement.value) return '无需实际收付款';
+  return isMerchantRepayment.value ? '门店应退平台' : '平台应付门店';
+});
 
 async function loadStoreOptions() {
   storeOptions.value = await getOrderStoreOptionsApi();
@@ -336,17 +351,23 @@ async function submitPayment() {
   const target = operationTarget.value;
   if (!target) return;
   if (!paymentModel.actualPaymentConfirmed) {
-    message.warning('请先确认平台已经向门店实际付款');
+    let warning = '请先确认平台已经向门店实际付款';
+    if (isZeroSettlement.value) {
+      warning = '请先确认该结算单无需实际收付款';
+    } else if (isMerchantRepayment.value) {
+      warning = '请先确认平台已经收到门店退回的结算款';
+    }
+    message.warning(warning);
     return;
   }
   const paymentReference = paymentModel.paymentReference.trim();
   const remark = paymentModel.remark.trim();
   if (!paymentReference || paymentReference.length > 128) {
-    message.warning('请填写不超过128个字符的结算付款交易参考号');
+    message.warning('请填写不超过128个字符的结算交易参考号');
     return;
   }
   if (remark.length > 500) {
-    message.warning('付款备注不能超过500个字符');
+    message.warning('结算备注不能超过500个字符');
     return;
   }
   operationSaving.value = true;
@@ -357,7 +378,7 @@ async function submitPayment() {
     });
     paymentModalOpen.value = false;
     detail.value = result;
-    message.success('结算付款已登记，相关消费订单已标记为已结算');
+    message.success('结算收付款已登记，结算单已结清');
     await loadSettlements();
   } finally {
     operationSaving.value = false;
@@ -399,15 +420,15 @@ onMounted(async () => {
 
 <template>
   <Page
-    description="按自然月核对门店消费、平台手续费及应付金额，完成门店确认和平台付款登记。"
+    description="按自然月核对门店消费、冲正调整、平台手续费及结算净额，完成门店确认和收付款登记。"
     title="月度结算"
   >
     <Alert
       class="mb-4"
       :message="
         isSuperAdmin
-          ? '先生成已结束月份的结算单，等待店长确认后再从平台账户付款并登记流水。'
-          : '请逐项核对本门店消费明细和应结金额，确认后等待平台付款。'
+          ? '先生成已结束月份的结算单，系统会同时计入尚未处理的历史消费冲正；店长确认后再登记实际收付款。'
+          : '请逐项核对本门店消费和冲正调整明细，确认结算净额后等待平台处理。'
       "
       show-icon
       type="info"
@@ -431,7 +452,7 @@ onMounted(async () => {
         </Button>
       </Space>
       <div class="mt-2 text-xs text-gray-400">
-        每个自然月只生成一次；重复点击会返回已有结果，不会重复计算消费订单。
+        每个自然月只生成一次；重复点击不会重复计算消费订单或历史冲正调整。
       </div>
     </Card>
 
@@ -533,9 +554,23 @@ onMounted(async () => {
             {{ formatYuan(record.adjustmentAmountCent) }}
           </template>
           <template v-else-if="column.key === 'payable'">
-            <span class="font-semibold text-blue-600">
+            <span
+              class="font-semibold"
+              :class="
+                record.payableAmountCent < 0 ? 'text-red-500' : 'text-blue-600'
+              "
+            >
               {{ formatYuan(record.payableAmountCent) }}
             </span>
+            <div class="text-xs text-gray-400">
+              {{
+                record.payableAmountCent === 0
+                  ? '无需收付款'
+                  : record.payableAmountCent < 0
+                    ? '门店应退平台'
+                    : '平台应付门店'
+              }}
+            </div>
           </template>
           <template v-else-if="column.key === 'status'">
             <Tag
@@ -581,7 +616,7 @@ onMounted(async () => {
                 type="link"
                 @click="openPayment(record as StoreSettlementSummary)"
               >
-                登记付款
+                登记结清
               </Button>
             </Space>
           </template>
@@ -606,13 +641,13 @@ onMounted(async () => {
           <DescriptionsItem label="门店">
             {{ detail.settlement.storeName }}
           </DescriptionsItem>
-          <DescriptionsItem label="消费总额">
+          <DescriptionsItem label="净消费金额">
             {{ formatYuan(detail.settlement.grossAmountCent) }}
           </DescriptionsItem>
           <DescriptionsItem label="平台手续费">
             {{ formatYuan(detail.settlement.platformFeeCent) }}
           </DescriptionsItem>
-          <DescriptionsItem label="门店应结">
+          <DescriptionsItem label="结算净额">
             <strong>{{
               formatYuan(detail.settlement.payableAmountCent)
             }}</strong>
@@ -628,7 +663,7 @@ onMounted(async () => {
               }}
             </Tag>
           </DescriptionsItem>
-          <DescriptionsItem label="付款流水">
+          <DescriptionsItem label="结算流水">
             {{ detail.settlement.paymentReference || '-' }}
           </DescriptionsItem>
           <DescriptionsItem label="备注">
@@ -685,14 +720,14 @@ onMounted(async () => {
     >
       <Alert
         class="mb-4"
-        description="确认后平台才能登记付款。若金额或消费明细有疑问，请先取消并联系平台管理员处理。"
-        message="请先查看并核对结算明细"
+        description="确认后平台才能登记结清。若消费或冲正调整明细有疑问，请先取消并联系平台管理员处理。"
+        message="请先查看并核对全部结算明细"
         show-icon
         type="warning"
       />
       <div v-if="operationTarget" class="mb-4 rounded bg-gray-50 p-3">
         {{ operationTarget.storeName }} · {{ operationTarget.periodCode }} ·
-        应结
+        结算净额
         <strong>{{ formatYuan(operationTarget.payableAmountCent) }}</strong>
       </div>
       <Form layout="vertical" :model="confirmModel">
@@ -711,30 +746,54 @@ onMounted(async () => {
       v-model:open="paymentModalOpen"
       :confirm-loading="operationSaving"
       cancel-text="取消"
-      ok-text="确认登记付款"
-      title="登记门店结算付款"
+      ok-text="确认登记结清"
+      :title="
+        isZeroSettlement
+          ? '登记零额结算单结清'
+          : isMerchantRepayment
+            ? '登记门店退款结清'
+            : '登记门店结算付款'
+      "
       @ok="submitPayment"
     >
       <Alert
         class="mb-4"
-        description="系统不会自动转账。本操作会将结算单和对应消费订单标记为已结算，请在平台账户实际付款后操作。若请求超时，请保持付款流水号不变后重试。"
-        message="请先完成实际付款"
+        :description="
+          isZeroSettlement
+            ? '该结算单净额为零，无需实际收付款。请完成明细核对后登记结清；若请求超时，请保持交易参考号不变后重试。'
+            : isMerchantRepayment
+              ? '系统不会自动扣款。请在平台账户确认收到门店退回的结算款后操作；若请求超时，请保持交易参考号不变后重试。'
+              : '系统不会自动转账。请在平台账户实际付款后操作；若请求超时，请保持交易参考号不变后重试。'
+        "
+        :message="
+          isZeroSettlement
+            ? '无需实际收付款'
+            : isMerchantRepayment
+              ? '请先确认平台实际收款'
+              : '请先完成实际付款'
+        "
         show-icon
         type="warning"
       />
       <div v-if="operationTarget" class="mb-4 rounded bg-gray-50 p-3">
-        {{ operationTarget.storeName }} · 应付
+        {{ operationTarget.storeName }} · {{ settlementFlowLabel }}
         <strong>{{ formatYuan(operationTarget.payableAmountCent) }}</strong>
       </div>
       <Form layout="vertical" :model="paymentModel">
-        <FormItem label="付款交易参考号" required>
+        <FormItem label="结算交易参考号" required>
           <Input
             v-model:value="paymentModel.paymentReference"
             :maxlength="128"
-            placeholder="填写银行转账流水号或其他平台付款凭证号"
+            :placeholder="
+              isZeroSettlement
+                ? '填写内部零额结清参考号'
+                : isMerchantRepayment
+                  ? '填写门店退款的银行流水号或其他收款凭证号'
+                  : '填写银行转账流水号或其他平台付款凭证号'
+            "
           />
         </FormItem>
-        <FormItem label="付款备注（选填）">
+        <FormItem label="结算备注（选填）">
           <Input.TextArea
             v-model:value="paymentModel.remark"
             :maxlength="500"
@@ -743,7 +802,13 @@ onMounted(async () => {
           />
         </FormItem>
         <Checkbox v-model:checked="paymentModel.actualPaymentConfirmed">
-          我已核对平台账户，确认全部应结资金已经实际支付给该门店
+          {{
+            isZeroSettlement
+              ? '我已核对全部明细，确认该结算单无需实际收付款'
+              : isMerchantRepayment
+                ? '我已核对平台账户，确认已收到门店退回的全部结算款'
+                : '我已核对平台账户，确认全部应结资金已经实际支付给该门店'
+          }}
         </Checkbox>
       </Form>
     </Modal>
