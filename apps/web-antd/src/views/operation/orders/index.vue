@@ -561,13 +561,13 @@ onMounted(async () => {
     title="订单中心"
   >
     <Alert
-      class="mb-4"
+      class="mb-4!"
       message="订单记录按后台账号的数据权限隔离。门店停用或关闭后，历史订单仍会保留并可查询。"
       show-icon
       type="info"
     />
 
-    <Card class="mb-4">
+    <Card class="mb-4!">
       <Tabs v-model:active-key="activeTab">
         <Tabs.TabPane key="recharge" tab="充值订单" />
         <Tabs.TabPane key="consumption" tab="消费订单" />
@@ -908,7 +908,7 @@ onMounted(async () => {
       @ok="submitOrderExport"
     >
       <Alert
-        class="mb-4"
+        class="mb-4!"
         description="文件会沿用订单中心当前选择的门店、状态、订单号和手机号筛选条件，单次最多导出93天、10000条记录。"
         message="请选择订单创建日期范围"
         show-icon
@@ -932,7 +932,7 @@ onMounted(async () => {
       @ok="submitReversal"
     >
       <Alert
-        class="mb-4"
+        class="mb-4!"
         description="冲正会把本次消费实际扣除的积分按原充值批次全部退回客户，但不会自动向客户退还现金。该操作不可撤销，只应用于重复扣减、金额录入错误等异常处理。"
         message="这不是普通消费退款"
         show-icon
@@ -972,7 +972,7 @@ onMounted(async () => {
       @ok="submitRefund"
     >
       <Alert
-        class="mb-4"
+        class="mb-4!"
         description="本操作只登记已经完成的实际退款并扣回对应积分，不会自动从银行或支付渠道把钱退给用户。订单积分只要发生过消费，后端就会拒绝退款。"
         message="请先在平台收款账户完成资金退款"
         show-icon

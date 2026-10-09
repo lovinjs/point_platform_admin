@@ -433,7 +433,7 @@ onMounted(async () => {
     description="按实际发生日期核对平台现金、消费归属与门店付款，并追溯关键业务操作。仅超级管理员可查看。"
     title="财务对账与审计"
   >
-    <Card class="mb-4">
+    <Card class="mb-4!">
       <Tabs v-model:active-key="activeTab">
         <Tabs.TabPane key="reconciliation" tab="财务对账" />
         <Tabs.TabPane key="audit" tab="操作审计" />
@@ -442,14 +442,14 @@ onMounted(async () => {
 
     <template v-if="activeTab === 'reconciliation'">
       <Alert
-        class="mb-4"
+        class="mb-4!"
         description="充值实收按充值完成日统计，退款按退款完成日统计，消费归属按消费完成日统计，实际付款按结算付款日统计。它们可能来自不同批次，期间金额不要求彼此相等。"
         message="请按资金或业务的实际发生日期理解各项数据"
         show-icon
         type="info"
       />
 
-      <Card class="mb-4">
+      <Card class="mb-4!">
         <Row :gutter="12">
           <Col :lg="9" :md="14" :xs="24">
             <DatePicker.RangePicker
@@ -504,7 +504,7 @@ onMounted(async () => {
         </Row>
       </Card>
 
-      <Row :gutter="12" class="mb-4">
+      <Row :gutter="12" class="mb-4!">
         <Col :lg="6" :sm="12" :xs="24">
           <Card class="metric-card" size="small">
             <div class="metric-label">充值实收</div>
@@ -545,7 +545,7 @@ onMounted(async () => {
         </Col>
       </Row>
 
-      <Row :gutter="12" class="mb-4">
+      <Row :gutter="12" class="mb-4!">
         <Col :lg="6" :sm="12" :xs="24">
           <Card class="metric-card" size="small">
             <div class="metric-label">平台手续费</div>
@@ -669,14 +669,14 @@ onMounted(async () => {
 
     <template v-else>
       <Alert
-        class="mb-4"
+        class="mb-4!"
         description="审计记录用于追踪谁在什么时间对哪项业务执行了操作。变更前后快照可能包含业务信息，仅超级管理员可见，页面不提供修改或删除入口。"
         message="关键业务审计记录为只读数据"
         show-icon
         type="warning"
       />
 
-      <Card class="mb-4">
+      <Card class="mb-4!">
         <Row :gutter="12">
           <Col :lg="7" :md="12" :xs="24">
             <DatePicker.RangePicker
@@ -871,12 +871,12 @@ onMounted(async () => {
           </DescriptionsItem>
         </Descriptions>
 
-        <Card class="mt-4" size="small" title="变更前快照">
+        <Card class="mt-4!" size="small" title="变更前快照">
           <pre class="snapshot">{{
             prettyJson(auditDetail.beforeSnapshot)
           }}</pre>
         </Card>
-        <Card class="mt-4" size="small" title="变更后快照">
+        <Card class="mt-4!" size="small" title="变更后快照">
           <pre class="snapshot">{{
             prettyJson(auditDetail.afterSnapshot)
           }}</pre>

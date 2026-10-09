@@ -396,13 +396,13 @@ onMounted(loadCustomers);
     title="客户管理"
   >
     <Alert
-      class="mb-4"
+      class="mb-4!"
       message="冻结客户会让其当前登录立即失效，并取消尚未确认的消费订单；积分余额不会被修改。所有状态操作都会记录原因和审计日志。"
       show-icon
       type="info"
     />
 
-    <Card class="mb-4">
+    <Card class="mb-4!">
       <Row :gutter="12">
         <Col :lg="8" :md="12" :xs="24">
           <Input
@@ -534,7 +534,7 @@ onMounted(loadCustomers);
           </Tag>
         </div>
 
-        <Descriptions :column="2" bordered class="mb-5" size="small">
+        <Descriptions :column="2" bordered class="mb-5!" size="small">
           <DescriptionsItem label="绑定手机号">
             {{ detail.phone || '未绑定' }}
           </DescriptionsItem>
@@ -711,7 +711,7 @@ onMounted(loadCustomers);
     >
       <Alert
         v-if="targetStatus === 'DISABLED'"
-        class="mb-4"
+        class="mb-4!"
         description="客户现有登录凭证会立即失效，尚未确认的消费订单会被取消；账户积分余额不会改变。"
         message="冻结影响"
         show-icon
@@ -719,7 +719,7 @@ onMounted(loadCustomers);
       />
       <Alert
         v-else
-        class="mb-4"
+        class="mb-4!"
         description="恢复后客户可以重新登录，已取消的消费订单不会自动恢复。"
         message="恢复影响"
         show-icon

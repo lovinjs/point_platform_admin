@@ -304,13 +304,13 @@ onMounted(loadMerchants);
 <template>
   <Page description="维护合作主体、协议与合作状态。" title="合作商户">
     <Alert
-      class="mb-4"
+      class="mb-4!"
       message="停用商户会立即阻止其全部门店继续充值和消费，但不会修改门店自身状态，也不会影响历史订单与结算。"
       show-icon
       type="info"
     />
 
-    <Card class="mb-4">
+    <Card class="mb-4!">
       <Row :gutter="12">
         <Col :lg="8" :md="12" :xs="24">
           <Input

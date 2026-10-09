@@ -281,13 +281,13 @@ onMounted(async () => {
   <Page description="维护合作门店资料及营业状态。" title="门店管理">
     <Alert
       v-if="merchantOptions.length === 0"
-      class="mb-4"
+      class="mb-4!"
       message="当前没有有效合作商户，请先准备合作商户资料后再新增门店。"
       show-icon
       type="warning"
     />
 
-    <Card class="mb-4">
+    <Card class="mb-4!">
       <Row :gutter="12">
         <Col :lg="6" :md="12" :xs="24">
           <Input

@@ -424,7 +424,7 @@ onMounted(async () => {
     title="月度结算"
   >
     <Alert
-      class="mb-4"
+      class="mb-4!"
       :message="
         isSuperAdmin
           ? '先生成已结束月份的结算单，系统会同时计入尚未处理的历史消费冲正；店长确认后再登记实际收付款。'
@@ -434,7 +434,7 @@ onMounted(async () => {
       type="info"
     />
 
-    <Card v-if="isSuperAdmin" class="mb-4" title="生成月度结算单">
+    <Card v-if="isSuperAdmin" class="mb-4!" title="生成月度结算单">
       <Space wrap>
         <DatePicker
           v-model:value="generatePeriod"
@@ -456,7 +456,7 @@ onMounted(async () => {
       </div>
     </Card>
 
-    <Card class="mb-4">
+    <Card class="mb-4!">
       <Row :gutter="12">
         <Col :lg="5" :md="12" :xs="24">
           <Input
@@ -672,7 +672,7 @@ onMounted(async () => {
         </Descriptions>
 
         <Table
-          class="mt-4"
+          class="mt-4!"
           :columns="itemColumns"
           :data-source="detail.items"
           :pagination="false"
@@ -719,7 +719,7 @@ onMounted(async () => {
       @ok="submitConfirm"
     >
       <Alert
-        class="mb-4"
+        class="mb-4!"
         description="确认后平台才能登记结清。若消费或冲正调整明细有疑问，请先取消并联系平台管理员处理。"
         message="请先查看并核对全部结算明细"
         show-icon
@@ -757,7 +757,7 @@ onMounted(async () => {
       @ok="submitPayment"
     >
       <Alert
-        class="mb-4"
+        class="mb-4!"
         :description="
           isZeroSettlement
             ? '该结算单净额为零，无需实际收付款。请完成明细核对后登记结清；若请求超时，请保持交易参考号不变后重试。'

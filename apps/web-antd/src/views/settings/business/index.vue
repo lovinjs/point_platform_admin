@@ -132,7 +132,7 @@ onMounted(loadSetting);
     title="平台业务参数"
   >
     <Alert
-      class="mb-4"
+      class="mb-4!"
       description="手续费率会影响平台收入和门店应结算金额。系统会把实际费率和金额保存在每笔消费订单中，修改配置不会追溯历史订单。"
       message="这是高风险财务配置，保存前请核对合作协议"
       show-icon
@@ -141,7 +141,7 @@ onMounted(loadSetting);
 
     <Row :gutter="16">
       <Col :lg="9" :xs="24">
-        <Card :loading="loading" class="mb-4" title="固定业务规则">
+        <Card :loading="loading" class="mb-4!" title="固定业务规则">
           <Descriptions bordered :column="1" size="small">
             <DescriptionsItem label="充值兑换">
               1 元 = {{ setting?.pointsPerYuan ?? 1 }} 积分
@@ -161,7 +161,7 @@ onMounted(loadSetting);
           </Descriptions>
         </Card>
 
-        <Card :loading="loading" class="mb-4" title="最近修改">
+        <Card :loading="loading" class="mb-4!" title="最近修改">
           <Descriptions :column="1" size="small">
             <DescriptionsItem label="修改人">
               {{ setting?.lastUpdatedByName || '系统初始值' }}
@@ -195,7 +195,7 @@ onMounted(loadSetting);
               />
             </FormItem>
 
-            <Alert class="mb-5" show-icon type="info">
+            <Alert class="mb-5!" show-icon type="info">
               <template #message>
                 按当前设置，每消费 100 元，平台收取
                 {{ feePercent.toFixed(2) }} 元，门店应结算

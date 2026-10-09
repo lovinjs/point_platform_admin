@@ -167,14 +167,14 @@ onMounted(async () => {
   >
     <template v-if="canViewBusinessData">
       <Alert
-        class="mb-4"
+        class="mb-4!"
         :description="`${scopeDescription}。充值、退款、消费均按完成时间统计；首页数字用于运营观察，正式核账请使用财务对账页面。`"
         message="经营数据已按账号权限隔离"
         show-icon
         type="info"
       />
 
-      <Card class="mb-4">
+      <Card class="mb-4!">
         <Row :gutter="12">
           <Col :lg="9" :md="12" :xs="24">
             <Select
@@ -224,7 +224,7 @@ onMounted(async () => {
         </Row>
       </Card>
 
-      <Row :gutter="12" class="mb-4">
+      <Row :gutter="12" class="mb-4!">
         <Col :lg="6" :sm="12" :xs="24">
           <Card :loading="loading" class="metric-card" size="small">
             <div class="metric-label">今日充值实收</div>
@@ -275,7 +275,7 @@ onMounted(async () => {
         </Col>
       </Row>
 
-      <Row :gutter="12" class="mb-4">
+      <Row :gutter="12" class="mb-4!">
         <Col :lg="6" :sm="12" :xs="24">
           <Card :loading="loading" class="metric-card" size="small">
             <div class="metric-label">本月平台手续费</div>
@@ -318,7 +318,7 @@ onMounted(async () => {
         </Col>
       </Row>
 
-      <Row :gutter="16" class="mb-4">
+      <Row :gutter="16" class="mb-4!">
         <Col :lg="17" :xs="24">
           <Card
             :loading="loading"
@@ -331,7 +331,7 @@ onMounted(async () => {
           </Card>
         </Col>
         <Col :lg="7" :xs="24">
-          <Card class="mt-4 lg:mt-0" title="待处理事项">
+          <Card class="mt-4! lg:mt-0!" title="待处理事项">
             <div class="backlog-row">
               <div>
                 <div class="font-medium">待用户确认消费</div>
@@ -358,7 +358,7 @@ onMounted(async () => {
               <strong>{{ backlog.awaitingPlatformPaymentCount }} 张</strong>
             </div>
             <Button
-              class="mt-4 w-full"
+              class="mt-4! w-full"
               type="primary"
               @click="navigate('/settlement/monthly')"
             >
@@ -376,7 +376,7 @@ onMounted(async () => {
 
     <Alert
       v-else
-      class="mb-4"
+      class="mb-4!"
       description="店员可以进行门店充值、创建消费订单并查询本门店订单。涉及平台手续费、门店应付和结算的经营数据仅向店长及超级管理员开放。"
       message="当前账号为门店操作角色"
       show-icon
@@ -415,7 +415,7 @@ onMounted(async () => {
         </Card>
       </Col>
       <Col :lg="8" :xs="24">
-        <Card class="mt-4 lg:mt-0" title="快捷入口">
+        <Card class="mt-4! lg:mt-0!" title="快捷入口">
           <Space class="w-full" direction="vertical" size="middle">
             <Button
               block

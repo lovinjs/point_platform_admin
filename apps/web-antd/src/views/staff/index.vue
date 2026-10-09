@@ -386,7 +386,7 @@ onMounted(async () => {
     title="员工账号"
   >
     <Alert
-      class="mb-4"
+      class="mb-4!"
       message="当前按一名员工对应一家门店管理；底层权限结构已保留未来店长管理多家门店的能力。超级管理员账号不允许在此页面修改。"
       show-icon
       type="info"
@@ -394,13 +394,13 @@ onMounted(async () => {
 
     <Alert
       v-if="storeOptions.length === 0"
-      class="mb-4"
+      class="mb-4!"
       message="当前没有可分配的门店，请先创建合作商户和门店。"
       show-icon
       type="warning"
     />
 
-    <Card class="mb-4">
+    <Card class="mb-4!">
       <Row :gutter="12">
         <Col :lg="6" :md="12" :xs="24">
           <Input
@@ -674,7 +674,7 @@ onMounted(async () => {
       @ok="submitPasswordReset"
     >
       <Alert
-        class="mb-4"
+        class="mb-4!"
         message="密码重置后，该员工当前所有登录凭证会立即失效。"
         show-icon
         type="warning"

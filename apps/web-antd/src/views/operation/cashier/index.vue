@@ -422,14 +422,14 @@ onBeforeUnmount(stopOrderPolling);
     title="门店收银台"
   >
     <Alert
-      class="mb-4"
+      class="mb-4!"
       description="充值资金必须已经进入平台指定账户。不要在未核实到账、资金进入门店个人账户或仅凭用户口头说明时增加积分。如果提交超时，请保持表单内容不变原样重试，系统会避免重复记账。"
       message="线下充值属于平台收款"
       show-icon
       type="warning"
     />
 
-    <Card class="mb-4" title="1. 查询用户与选择门店">
+    <Card class="mb-4!" title="1. 查询用户与选择门店">
       <Row :gutter="16">
         <Col :lg="10" :xs="24">
           <FormItem label="用户手机号">
@@ -521,7 +521,7 @@ onBeforeUnmount(stopOrderPolling);
 
     <Row :gutter="16">
       <Col :lg="12" :xs="24">
-        <Card class="mb-4" title="2A. 线下充值">
+        <Card class="mb-4!" title="2A. 线下充值">
           <Form layout="vertical" :model="rechargeForm">
             <FormItem label="充值金额（元）" required>
               <InputNumber
@@ -571,7 +571,7 @@ onBeforeUnmount(stopOrderPolling);
 
           <Alert
             v-if="rechargeResult"
-            class="mt-4"
+            class="mt-4!"
             :description="`充值订单：${rechargeResult.orderNo}`"
             :message="`充值成功，已增加 ${rechargeResult.rechargePoints} 积分`"
             show-icon
@@ -581,10 +581,10 @@ onBeforeUnmount(stopOrderPolling);
       </Col>
 
       <Col :lg="12" :xs="24">
-        <Card class="mb-4" title="2B. 发起积分消费">
+        <Card class="mb-4!" title="2B. 发起积分消费">
           <Alert
             v-if="customer && !customer.consumePinConfigured"
-            class="mb-4"
+            class="mb-4!"
             message="该用户还未设置消费密码，请先让用户在H5个人中心完成设置。"
             show-icon
             type="warning"
@@ -621,7 +621,7 @@ onBeforeUnmount(stopOrderPolling);
 
           <Card
             v-if="consumptionResult"
-            class="mt-4"
+            class="mt-4!"
             size="small"
             title="当前消费订单"
           >
@@ -670,7 +670,7 @@ onBeforeUnmount(stopOrderPolling);
             </Descriptions>
             <Alert
               v-if="consumptionResult.orderStatus === 'PENDING_CONFIRM'"
-              class="mt-3"
+              class="mt-3!"
               message="请让用户打开H5，在待确认消费中核对门店和积分并输入消费密码。页面每3秒自动检查一次结果。"
               show-icon
               type="info"
