@@ -15,6 +15,7 @@ import type {
   RechargeOrderExportParams,
   RechargeOrderPageParams,
   RechargeOrderStatus,
+  RechargeRefundEligibility,
   RechargeRefundParams,
   RefundMethod,
   SettlementStatus,
@@ -46,6 +47,7 @@ import {
   Table,
   Tabs,
   Tag,
+  Tooltip,
 } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
@@ -55,6 +57,7 @@ import {
   getConsumptionOrderPageApi,
   getOrderStoreOptionsApi,
   getRechargeOrderPageApi,
+  getRechargeRefundEligibilityApi,
   refundRechargeOrderApi,
   reverseConsumptionOrderApi,
 } from '#/api';
@@ -136,7 +139,7 @@ const rechargeColumns: TableProps<AdminRechargeOrder>['columns'] = [
   { dataIndex: 'orderStatus', key: 'status', title: '状态', width: 185 },
   { dataIndex: 'operatorId', key: 'operator', title: '操作员', width: 130 },
   { dataIndex: 'remark', key: 'remark', title: '备注', width: 200 },
-  { fixed: 'right', key: 'action', title: '操作', width: 90 },
+  { fixed: 'right', key: 'action', title: '操作', width: 165 },
 ];
 
 const consumptionColumns: TableProps<AdminConsumptionOrder>['columns'] = [
@@ -182,6 +185,11 @@ const consumptionLoading = ref(false);
 const refundSaving = ref(false);
 const refundModalOpen = ref(false);
 const refundOrder = ref<AdminRechargeOrder>();
+const refundEligibility = ref<RechargeRefundEligibility>();
+const refundCheckingOrderNo = ref<string>();
+const refundEligibilityByOrderNo = ref<
+  Record<string, RechargeRefundEligibility>
+>({});
 const reversalSaving = ref(false);
 const reversalModalOpen = ref(false);
 const reversalOrder = ref<AdminConsumptionOrder>();
@@ -238,6 +246,7 @@ async function loadRechargeOrders() {
   try {
     const result = await getRechargeOrderPageApi(cleanQuery(rechargeQuery));
     rechargeOrders.value = result.items;
+    refundEligibilityByOrderNo.value = {};
     rechargeTotal.value = result.total;
     rechargeQuery.pageNum = result.pageNum;
     rechargeQuery.pageSize = result.pageSize;
@@ -389,21 +398,56 @@ function handleConsumptionTableChange(value: TablePagination) {
   void loadConsumptionOrders();
 }
 
-function openRefund(order: AdminRechargeOrder) {
-  if (!isSuperAdmin.value || order.orderStatus !== 'COMPLETED') return;
-  refundOrder.value = order;
-  Object.assign(refundModel, {
-    actualRefundConfirmed: false,
-    reason: '',
-    refundMethod: 'ORIGINAL_CHANNEL',
-    refundReference: '',
-  });
-  refundAttempt = undefined;
-  refundModalOpen.value = true;
+async function openRefund(order: AdminRechargeOrder) {
+  if (
+    !isSuperAdmin.value ||
+    order.orderStatus !== 'COMPLETED' ||
+    refundCheckingOrderNo.value
+  ) {
+    return;
+  }
+  refundCheckingOrderNo.value = order.orderNo;
+  refundEligibility.value = undefined;
+  try {
+    const eligibility = await getRechargeRefundEligibilityApi(order.orderNo);
+    if (
+      eligibility?.orderNo !== order.orderNo ||
+      typeof eligibility.refundable !== 'boolean'
+    ) {
+      message.error('无法确认退款资格，请刷新订单后重试');
+      return;
+    }
+    refundEligibilityByOrderNo.value[order.orderNo] = eligibility;
+    if (!eligibility.refundable) {
+      message.warning(eligibility.unavailableReason || '该充值订单暂不能退款');
+      return;
+    }
+    refundEligibility.value = eligibility;
+    refundOrder.value = order;
+    Object.assign(refundModel, {
+      actualRefundConfirmed: false,
+      reason: '',
+      refundMethod: 'ORIGINAL_CHANNEL',
+      refundReference: '',
+    });
+    refundAttempt = undefined;
+    refundModalOpen.value = true;
+  } catch {
+    // 网络、接口版本或鉴权失败由请求层提示；检查失败不能打开退款登记窗口。
+  } finally {
+    refundCheckingOrderNo.value = undefined;
+  }
 }
 
 function validateRefund(): RechargeRefundParams | undefined {
   if (!refundOrder.value) return;
+  if (
+    refundEligibility.value?.refundable !== true ||
+    refundEligibility.value.orderNo !== refundOrder.value.orderNo
+  ) {
+    message.warning('请先重新检查该订单的退款资格');
+    return;
+  }
   if (!refundModel.actualRefundConfirmed) {
     message.warning('请先确认退款资金已经实际退回用户');
     return;
@@ -771,15 +815,42 @@ onMounted(async () => {
             <span :title="record.remark || ''">{{ record.remark || '-' }}</span>
           </template>
           <template v-else-if="column.key === 'action'">
-            <Button
-              v-if="isSuperAdmin && record.orderStatus === 'COMPLETED'"
-              danger
-              size="small"
-              type="link"
-              @click="openRefund(record as AdminRechargeOrder)"
-            >
-              全额退款
-            </Button>
+            <div v-if="isSuperAdmin && record.orderStatus === 'COMPLETED'">
+              <Tooltip
+                :title="
+                  refundEligibilityByOrderNo[record.orderNo]
+                    ?.unavailableReason ||
+                  '先检查该笔充值是否可退，再登记实际全额退款'
+                "
+              >
+                <Button
+                  :disabled="Boolean(refundCheckingOrderNo)"
+                  :loading="refundCheckingOrderNo === record.orderNo"
+                  danger
+                  size="small"
+                  type="link"
+                  @click="openRefund(record as AdminRechargeOrder)"
+                >
+                  {{
+                    refundEligibilityByOrderNo[record.orderNo]?.refundable ===
+                    false
+                      ? '重查退款资格'
+                      : '检查并全额退款'
+                  }}
+                </Button>
+              </Tooltip>
+              <div
+                v-if="
+                  refundEligibilityByOrderNo[record.orderNo]?.refundable ===
+                  false
+                "
+                class="text-xs text-gray-500"
+              >
+                {{
+                  refundEligibilityByOrderNo[record.orderNo]?.unavailableReason
+                }}
+              </div>
+            </div>
             <span v-else class="text-gray-400">-</span>
           </template>
         </template>
@@ -968,12 +1039,13 @@ onMounted(async () => {
       cancel-text="取消"
       ok-text="确认登记全额退款"
       title="充值订单全额退款"
+      :ok-button-props="{ disabled: refundEligibility?.refundable !== true }"
       width="620px"
       @ok="submitRefund"
     >
       <Alert
         class="mb-4!"
-        description="本操作只登记已经完成的实际退款并扣回对应积分，不会自动从银行或支付渠道把钱退给用户。订单积分只要发生过消费，后端就会拒绝退款。"
+        description="已通过当前退款资格检查，但检查不会冻结积分，后续消费可能改变资格。本操作只登记已经完成的实际退款并扣回对应积分，不会自动打款；提交时后端仍会重新校验。"
         message="请先在平台收款账户完成资金退款"
         show-icon
         type="warning"

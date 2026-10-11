@@ -99,6 +99,12 @@ interface AdminConsumptionOrder {
   verificationMode: 'CUSTOMER_PIN';
 }
 
+interface RechargeRefundEligibility {
+  orderNo: string;
+  refundable: boolean;
+  unavailableReason: null | string;
+}
+
 interface RechargeRefundParams {
   reason: string;
   refundMethod: RefundMethod;
@@ -165,6 +171,12 @@ function exportConsumptionOrdersApi(params: ConsumptionOrderExportParams) {
   });
 }
 
+function getRechargeRefundEligibilityApi(orderNo: string) {
+  return requestClient.get<RechargeRefundEligibility>(
+    `/recharge-orders/${encodeURIComponent(orderNo)}/refund-eligibility`,
+  );
+}
+
 function refundRechargeOrderApi(
   orderNo: string,
   data: RechargeRefundParams,
@@ -195,6 +207,7 @@ export {
   getConsumptionOrderPageApi,
   getOrderStoreOptionsApi,
   getRechargeOrderPageApi,
+  getRechargeRefundEligibilityApi,
   refundRechargeOrderApi,
   reverseConsumptionOrderApi,
 };
@@ -211,6 +224,7 @@ export type {
   RechargeOrderExportParams,
   RechargeOrderPageParams,
   RechargeOrderStatus,
+  RechargeRefundEligibility,
   RechargeRefundParams,
   RechargeRefundResult,
   RefundMethod,
