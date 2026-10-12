@@ -30,6 +30,9 @@ export const overridesPreferences = defineOverridesPreferences({
     companySiteLink: '',
     date: '2026',
     enable: true,
+    icp: import.meta.env.MODE === 'staging' ? '黔ICP备2026018593号-1' : '',
+    icpLink:
+      import.meta.env.MODE === 'staging' ? 'https://beian.miit.gov.cn/' : '',
   },
   theme: {
     mode: 'light',

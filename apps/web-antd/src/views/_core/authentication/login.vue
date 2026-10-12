@@ -11,6 +11,7 @@ import { useAuthStore } from '#/store';
 defineOptions({ name: 'Login' });
 
 const authStore = useAuthStore();
+const isStaging = import.meta.env.MODE === 'staging';
 
 const formSchema = computed((): VbenFormSchema[] => {
   return [
@@ -45,7 +46,11 @@ const formSchema = computed((): VbenFormSchema[] => {
     :show-qrcode-login="false"
     :show-register="false"
     :show-third-party-login="false"
-    sub-title="请使用平台分配的后台账号登录"
+    :sub-title="
+      isStaging
+        ? '预发布测试环境，请勿登记真实收付款'
+        : '请使用平台分配的后台账号登录'
+    "
     title="后台登录"
     @submit="authStore.authLogin"
   />
