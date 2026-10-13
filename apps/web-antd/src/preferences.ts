@@ -26,13 +26,14 @@ export const overridesPreferences = defineOverridesPreferences({
     name: import.meta.env.VITE_APP_TITLE,
   },
   copyright: {
-    companyName: '积分平台',
+    companyName: '贵州诚辰互联网销售有限公司',
     companySiteLink: '',
     date: '2026',
     enable: true,
-    icp: import.meta.env.MODE === 'staging' ? '黔ICP备2026018593号-1' : '',
-    icpLink:
-      import.meta.env.MODE === 'staging' ? 'https://beian.miit.gov.cn/' : '',
+    icp: import.meta.env.VITE_ICP_FILING_NUMBER?.trim() || '',
+    icpLink: import.meta.env.VITE_ICP_FILING_NUMBER?.trim()
+      ? 'https://beian.miit.gov.cn/'
+      : '',
   },
   theme: {
     mode: 'light',
